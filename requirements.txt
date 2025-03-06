@@ -1,0 +1,9 @@
+mesa==2.2.0
+networkx
+matplotlib
+altair
+solara
+numpy
+pandas
+scipy
+tqdm
