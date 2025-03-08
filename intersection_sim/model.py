@@ -22,20 +22,6 @@ class TrafficModel(Model):
                 if y == 10 or y == 9 or x == 10 or x == 9:
                     road = RoadCell((x, y), self)
                     self.grid.place_agent(road, (x, y))
-        # for x in range(width):
-        #     for y in range(height):
-        #         if y == 10: # East-West road (Eastbound)
-        #             road = RoadCell((x, y), self)
-        #             self.grid.place_agent(road, (x, y))
-        #         elif y == 9: # East-West road (Westbound)
-        #             road = RoadCell((x, y), self)
-        #             self.grid.place_agent(road, (x, y))
-        #         elif x == 10: # North-South road (Southbound)
-        #             road = RoadCell((x, y), self)
-        #             self.grid.place_agent(road, (x, y))
-        #         elif x == 9: # North-South road (Northbound)
-        #             road = RoadCell((x, y), self)
-        #             self.grid.place_agent(road, (x, y))
 
         # Add traffic lights
         self.traffic_lights = []
@@ -63,7 +49,7 @@ class TrafficModel(Model):
         # Spawn new vehicles dynamically
         if random.random() < 0.1:  # 10% chance to spawn a vehicle each step
             self.spawn_vehicle()
-            
+
         self.schedule.step()
 
     def update_traffic_lights(self):
