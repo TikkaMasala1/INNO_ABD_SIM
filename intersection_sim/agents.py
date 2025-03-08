@@ -11,11 +11,21 @@ class TrafficLightAgent(Agent):
         super().__init__(pos, model)
         self.pos = pos
         self.state = "Red" # Initial state, will be updated by model
+        self.cycle = 30 # time the tafic light 
 
     def step(self):
         pass # State is updated by the TrafficModel, no action needed here
 
 class VehicleAgent(Agent):
+    # Define spawn_points as a class-level attribute
+    spawn_positions = [(0, 10), (19, 9), (10, 0), (9, 19)]
+    colors = ["Red", "Blue", "Green", "Purple"]  # List of available colors
+    directions = {
+        (1, 0): "east",  # Eastbound
+        (-1, 0): "west",  # Westbound
+        (0, 1): "south",  # Southbound
+        (0, -1): "north",  # Northbound
+    }
     def __init__(self, unique_id, model, start_pos):
         super().__init__(unique_id, model)
         self.pos = start_pos
@@ -24,6 +34,13 @@ class VehicleAgent(Agent):
         self.speed = 1
         self.sensing_range = 5
         self.is_stopped_for_queue = False
+        self.color = random.choice(self.colors)  # Assign a random color
+        self.image = self.get_image_path()  # Get the correct image path
+        
+    def get_image_path(self):
+        # Construct the image path based on color and direction
+        direction_name = self.directions.get(self.direction, "east")  # Default to east if direction is unknown
+        return f"assets/cars/{self.color}/{self.color}_{direction_name}.png"
 
     def determine_direction(self, start_pos):
 
@@ -95,11 +112,17 @@ class VehicleAgent(Agent):
             new_x = self.pos[0] + self.direction[0]
             new_y = self.pos[1] + self.direction[1]
 
-            if 0 <= new_x < self.model.grid.width and 0 <= new_y < self.model.grid.height:
-                cell_contents = self.model.grid.get_cell_list_contents((new_x, new_y))
-                road_present = any(isinstance(agent, RoadCell) for agent in cell_contents)
-                vehicle_present = any(isinstance(agent, VehicleAgent) for agent in cell_contents)
+            # Check if the vehicle has exited the grid
+            if not (0 <= new_x < self.model.grid.width and 0 <= new_y < self.model.grid.height):
+                self.model.grid.remove_agent(self)  # Remove the vehicle from the grid
+                self.model.schedule.remove(self)  # Remove the vehicle from the schedule
+                self.model.current_agents -= 1  # Decrement the counter
+                return
+            
+            cell_contents = self.model.grid.get_cell_list_contents((new_x, new_y))
+            road_present = any(isinstance(agent, RoadCell) for agent in cell_contents)
+            vehicle_present = any(isinstance(agent, VehicleAgent) for agent in cell_contents)
 
-                if road_present and not vehicle_present:
-                    self.model.grid.move_agent(self, (new_x, new_y))
-                    self.steps_taken += 1
+            if road_present and not vehicle_present:
+                self.model.grid.move_agent(self, (new_x, new_y))
+                self.steps_taken += 1
