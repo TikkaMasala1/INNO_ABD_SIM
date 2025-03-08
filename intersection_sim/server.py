@@ -8,17 +8,6 @@ def agent_portrayal(agent):
     if isinstance(agent, RoadCell):
         return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "gray", "Layer": 0}
     
-    elif isinstance(agent, VehicleAgent):
-            color = "red" if agent.speed > 0 else "blue"
-            return {
-                "Shape": "arrowHead",  
-                "scale": 0.8,  
-                "Color": color,
-                "Layer": 1,
-                "heading_x": agent.direction[0],
-                "heading_y": agent.direction[1]
-            }
-    
     elif isinstance(agent, TrafficLightAgent):
         color = "green" if agent.state == "Green" else "red"
 
