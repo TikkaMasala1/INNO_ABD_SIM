@@ -26,7 +26,6 @@ class VehicleAgent(Agent):
         self.is_stopped_for_queue = False
 
     def determine_direction(self, start_pos):
-
         if start_pos[0] == 0 and start_pos[1] == 10: return (1, 0) # East
         if start_pos[0] == 19 and start_pos[1] == 9: return (-1, 0) # West
         if start_pos[1] == 0 and start_pos[0] == 10: return (0, 1) # South
@@ -43,9 +42,11 @@ class VehicleAgent(Agent):
 
             if 0 <= check_x < self.model.grid.width and 0 <= check_y < self.model.grid.height:
                 cell_contents = self.model.grid.get_cell_list_contents((check_x, check_y))
-                vehicle_ahead = any(isinstance(agent, VehicleAgent) for agent in cell_contents)
-                if vehicle_ahead:
-                    return True
+                for agent in cell_contents:
+                    if isinstance(agent, VehicleAgent):
+                        vehicle_ahead = agent
+                        if vehicle_ahead.speed < self.speed:
+                            return True
         return False
 
     def is_approaching_intersection(self):
@@ -79,17 +80,19 @@ class VehicleAgent(Agent):
     def step(self):
         if self.check_traffic_light():
             self.speed = 0
-            return # Stop and don't move further
+            self.is_stopped_for_queue = False  # Reset queue stop flag if stopped by light
+            return
 
         if self.detect_queue():
             self.speed = 0
             self.is_stopped_for_queue = True
         else:
             if self.is_stopped_for_queue:
-                self.speed = 1
-                self.is_stopped_for_queue = False
+                if not self.detect_queue():  # Re-check queue again right now.
+                    self.speed = 1
+                    self.is_stopped_for_queue = False
             else:
-                self.speed = 1
+                self.speed = 1  # Maintain speed if no queue and not previously stopped for queue.
 
         if self.speed > 0:
             new_x = self.pos[0] + self.direction[0]
