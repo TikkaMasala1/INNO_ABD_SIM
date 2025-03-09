@@ -18,7 +18,7 @@ class TrafficLightAgent(Agent):
 
 class VehicleAgent(Agent):
     # Define spawn_points as a class-level attribute
-    spawn_positions = [(0, 10), (19, 9), (10, 0), (9, 19)]
+    spawn_positions = [(0, 9), (19, 10), (10, 0), (9, 19)]
     colors = ["Red", "Blue", "Green", "Purple"]  # List of available colors
     directions = {
         (1, 0): "east",  # Eastbound
@@ -43,11 +43,12 @@ class VehicleAgent(Agent):
         return f"assets/cars/{self.color}/{self.color}_{direction_name}.png"
 
     def determine_direction(self, start_pos):
-        if start_pos[0] == 0 and start_pos[1] == 10: return (1, 0) # East
-        if start_pos[0] == 19 and start_pos[1] == 9: return (-1, 0) # West
+        if start_pos[0] == 0 and start_pos[1] == 9: return (1, 0) # East
+        if start_pos[0] == 19 and start_pos[1] == 10: return (-1, 0) # West
         if start_pos[1] == 0 and start_pos[0] == 10: return (0, 1) # South
         if start_pos[1] == 19 and start_pos[0] == 9: return (0, -1) # North
         return (0, 0)
+
 
     def detect_queue(self):
         if self.speed == 0:
