@@ -15,10 +15,19 @@ class TrafficLightAgent(Agent):
         self.current_cycle_time = 0  # Tracks the current time in the cycle
         self.horizontal_lights_green = True  # Start with horizontal lights green
 
+    def is_intersection_clear(self):
+        # Check if the middle 4 grid points are empty
+        intersection_cells = [(9, 9), (9, 10), (10, 9), (10, 10)]
+        for cell in intersection_cells:
+            cell_contents = self.model.grid.get_cell_list_contents(cell)
+            if any(isinstance(agent, VehicleAgent) for agent in cell_contents):
+                return False  # Intersection is not clear
+        return True  # Intersection is clear
+
     def step(self):
         self.current_cycle_time += 1
 
-        if self.current_cycle_time >= self.lights_cycle:
+        if self.current_cycle_time >= self.lights_cycle and self.is_intersection_clear():
             self.horizontal_lights_green = not self.horizontal_lights_green
             self.current_cycle_time = 0
             self.update_state()
