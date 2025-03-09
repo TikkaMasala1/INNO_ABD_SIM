@@ -5,11 +5,11 @@ from agents import VehicleAgent, RoadCell, TrafficLightAgent
 import random
 
 class TrafficModel(Model):
-    def __init__(self, width=20, height=20):
+    def __init__(self, width=20, height=20, traffic_light_cycle=30):
         super().__init__()
         self.grid = MultiGrid(width, height, torus=False)
         self.schedule = SimultaneousActivation(self)
-        self.traffic_light_cycle = 30 # 30 steps for each light cycle (green or red)
+        self.traffic_light_cycle = traffic_light_cycle  # Use the parameter value
         self.current_cycle_time = 0
         self.horizontal_lights_green = True # Start with horizontal lights green
         self.current_agents = 0  # Counter to track the current number of vehicles

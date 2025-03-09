@@ -1,5 +1,6 @@
 from mesa.visualization.modules import CanvasGrid
 from mesa.visualization.ModularVisualization import ModularServer
+from mesa.visualization.UserParam import Slider
 from model import TrafficModel
 from agents import RoadCell, VehicleAgent, TrafficLightAgent
 import random
@@ -34,11 +35,25 @@ def agent_portrayal(agent):
 
 grid = CanvasGrid(agent_portrayal, 20, 20, 500, 500)
 
+# Define the slider for traffic_light_cycle
+traffic_light_cycle_slider = Slider(
+    "Traffic Light Cycle",  # Label
+    30,  # Default value
+    10,  # Min value
+    60,  # Max value
+    1,  # Step size
+    description="Adjust the traffic light cycle duration"
+)
+
 server = ModularServer(
     TrafficModel,
     [grid],
     "Kruispunt Simulatie met Wachtrijen en Verkeerslichten",
-    {"width": 20, "height": 20}
+    {
+        "width": 20,
+        "height": 20,
+        "traffic_light_cycle": traffic_light_cycle_slider  # Add the slider to the model parameters
+    }
 )
 
 if __name__ == "__main__":
