@@ -9,12 +9,9 @@ class TrafficModel(Model):
         super().__init__()
         self.grid = MultiGrid(width, height, torus=False)
         self.schedule = SimultaneousActivation(self)
-        self.traffic_light_cycle = traffic_light_cycle  # Use the parameter value
-        self.current_cycle_time = 0
-        self.horizontal_lights_green = True # Start with horizontal lights green
-        self.current_agents = 0  # Counter to track the current number of vehicles
-        self.total_entered = 0  # Counter to track total vehicles entered
-        self.total_exited = 0  # Counter to track total vehicles exited
+        self.current_agents = 0
+        self.total_entered = 0
+        self.total_exited = 0
 
         # Add roads
         for x in range(width):
@@ -32,32 +29,17 @@ class TrafficModel(Model):
             (9, 11)  # Northbound traffic light
         ]
         for pos in traffic_light_positions:
-            light = TrafficLightAgent(pos, self)
+            light = TrafficLightAgent(pos, self, traffic_light_cycle)
             self.traffic_lights.append(light)
             self.grid.place_agent(light, pos)
             self.schedule.add(light)
-        self.update_traffic_lights() # Initialize traffic lights state
 
     def step(self):
-        self.current_cycle_time += 1
-
-        if self.current_cycle_time >= self.traffic_light_cycle:
-            self.horizontal_lights_green = not self.horizontal_lights_green
-            self.current_cycle_time = 0
-            self.update_traffic_lights()
-
         # Spawn new vehicles dynamically
         if random.random() < 0.1:  # 10% chance to spawn a vehicle each step
             self.spawn_vehicle()
 
         self.schedule.step()
-
-    def update_traffic_lights(self):
-        for light in self.traffic_lights:
-            if light.pos in [(8, 10), (11, 9)]: # Eastbound and Westbound lights (Horizontal)
-                light.state = "Green" if self.horizontal_lights_green else "Red"
-            elif light.pos in [(10, 8), (9, 11)]: # Southbound and Northbound lights (Vertical)
-                light.state = "Red" if self.horizontal_lights_green else "Green"
 
     def spawn_vehicle(self):
         start_pos = random.choice(VehicleAgent.spawn_positions)

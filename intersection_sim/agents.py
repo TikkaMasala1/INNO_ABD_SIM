@@ -7,14 +7,27 @@ class RoadCell(Agent):
         self.pos = pos
 
 class TrafficLightAgent(Agent):
-    def __init__(self, pos, model):
+    def __init__(self, pos, model, lights_cycle=30):
         super().__init__(pos, model)
         self.pos = pos
-        self.state = "Red" # Initial state, will be updated by model
-        self.cycle = 30 # time the tafic light 
+        self.state = "Red"  # Initial state
+        self.lights_cycle = lights_cycle  # Cycle duration for the traffic light
+        self.current_cycle_time = 0  # Tracks the current time in the cycle
+        self.horizontal_lights_green = True  # Start with horizontal lights green
 
     def step(self):
-        pass # State is updated by the TrafficModel, no action needed here
+        self.current_cycle_time += 1
+
+        if self.current_cycle_time >= self.lights_cycle:
+            self.horizontal_lights_green = not self.horizontal_lights_green
+            self.current_cycle_time = 0
+            self.update_state()
+
+    def update_state(self):
+        if self.pos in [(8, 10), (11, 9)]:  # Eastbound and Westbound lights (Horizontal)
+            self.state = "Green" if self.horizontal_lights_green else "Red"
+        elif self.pos in [(10, 8), (9, 11)]:  # Southbound and Northbound lights (Vertical)
+            self.state = "Red" if self.horizontal_lights_green else "Green"
 
 class VehicleAgent(Agent):
     # Define spawn_points as a class-level attribute
