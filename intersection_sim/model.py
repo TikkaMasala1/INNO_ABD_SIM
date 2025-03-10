@@ -5,13 +5,14 @@ from agents import VehicleAgent, RoadCell, TrafficLightAgent
 import random
 
 class TrafficModel(Model):
-    def __init__(self, width=20, height=20, traffic_light_cycle=30):
+    def __init__(self, width=20, height=20, traffic_light_cycle=30, car_spawn_rate=15):
         super().__init__()
         self.grid = MultiGrid(width, height, torus=False)
         self.schedule = SimultaneousActivation(self)
         self.current_agents = 0
         self.total_entered = 0
         self.total_exited = 0
+        self.car_spawn_rate = car_spawn_rate
 
         # Add roads
         for x in range(width):
@@ -36,7 +37,7 @@ class TrafficModel(Model):
 
     def step(self):
         # Spawn new vehicles dynamically
-        if random.random() < 0.1:  # 10% chance to spawn a vehicle each step
+        if random.random() < (self.car_spawn_rate/100):  # 10% chance to spawn a vehicle each step
             self.spawn_vehicle()
 
         self.schedule.step()

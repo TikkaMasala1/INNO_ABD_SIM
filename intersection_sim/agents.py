@@ -48,7 +48,7 @@ class VehicleAgent(Agent):
         (0, 1): "south",  # Southbound
         (0, -1): "north",  # Northbound
     }
-    def __init__(self, unique_id, model, start_pos):
+    def __init__(self, unique_id, model, start_pos, car_spawn_rate=15):
         super().__init__(unique_id, model)
         self.pos = start_pos
         self.steps_taken = 0
@@ -58,11 +58,12 @@ class VehicleAgent(Agent):
         self.is_stopped_for_queue = False
         self.color = random.choice(self.colors)  # Assign a random color
         self.image = self.get_image_path()  # Get the correct image path
+        self.car_spawn_rate = car_spawn_rate
         
     def get_image_path(self):
         # Construct the image path based on color and direction
         direction_name = self.directions.get(self.direction, "east")  # Default to east if direction is unknown
-        return f"assets/cars/{self.color}/{self.color}_{direction_name}.png"
+        return f"intersection_sim/assets/cars/{self.color}/{self.color}_{direction_name}.png"
 
     def determine_direction(self, start_pos):
         if start_pos[0] == 0 and start_pos[1] == 9: return (1, 0) # East

@@ -44,6 +44,14 @@ traffic_light_cycle_slider = Slider(
     1,  # Step size
     description="Adjust the traffic light cycle duration"
 )
+spawn_rate_slider = Slider(
+    "car spawn rate",  # Label
+    15,  # Default value
+    10,  # Min value
+    80,  # Max value
+    5,  # Step size
+    description="Adjust the chance of spawning a car per step"
+)
 
 server = ModularServer(
     TrafficModel,
@@ -52,7 +60,8 @@ server = ModularServer(
     {
         "width": 20,
         "height": 20,
-        "traffic_light_cycle": traffic_light_cycle_slider  # Add the slider to the model parameters
+        "traffic_light_cycle": traffic_light_cycle_slider,  # Add the slider to the model parameters
+        "car_spawn_rate": spawn_rate_slider 
     }
 )
 
