@@ -46,13 +46,13 @@ class TrafficModel(Model):
                 self.grid.place_agent(RoadCell((x, y), self), (x, y))
 
 
-        # Verkeerslichten (kan later verfijnd worden per baanrichting)
+        # Verkeerslichten - 12 stuks (3 per kant, voor elke rijstrook)
         self.traffic_lights = []
         traffic_light_positions = [
-            (8, 10), # Eastbound traffic light
-            (11, 9), # Westbound traffic light
-            (10, 8), # Southbound traffic light
-            (9, 11)  # Northbound traffic light
+            (15, 11), (16, 11), (17, 11),
+            (12, 18), (13, 18), (14, 18),
+            (11, 12), (11, 13), (11, 14),
+            (18, 17), (18, 16), (18, 15),
         ]
         for pos in traffic_light_positions:
             light = TrafficLightAgent(pos, self, traffic_light_cycle)
