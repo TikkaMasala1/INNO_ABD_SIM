@@ -33,7 +33,7 @@ def agent_portrayal(agent):
 
     return None
 
-grid = CanvasGrid(agent_portrayal, 20, 20, 500, 500)
+grid = CanvasGrid(agent_portrayal, 30, 30, 600, 600)
 
 # Define the slider for traffic_light_cycle
 traffic_light_cycle_slider = Slider(
@@ -58,8 +58,8 @@ server = ModularServer(
     [grid],
     "Kruispunt Simulatie met Wachtrijen en Verkeerslichten",
     {
-        "width": 20,
-        "height": 20,
+        "width": 30,
+        "height": 30,
         "traffic_light_cycle": traffic_light_cycle_slider,  # Add the slider to the model parameters
         "car_spawn_rate": spawn_rate_slider 
     }
