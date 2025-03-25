@@ -5,7 +5,7 @@ from agents import VehicleAgent, RoadCell, TrafficLightAgent
 import random
 
 class TrafficModel(Model):
-    def __init__(self, width=20, height=20, traffic_light_cycle=30, car_spawn_rate=15):
+    def __init__(self, width=30, height=30, traffic_light_cycle=30, car_spawn_rate=15):
         super().__init__()
         self.grid = MultiGrid(width, height, torus=False)
         self.schedule = SimultaneousActivation(self)
@@ -14,14 +14,39 @@ class TrafficModel(Model):
         self.total_exited = 0
         self.car_spawn_rate = car_spawn_rate
 
-        # Add roads
-        for x in range(width):
-            for y in range(height):
-                if y == 10 or y == 9 or x == 10 or x == 9:
-                    road = RoadCell((x, y), self)
-                    self.grid.place_agent(road, (x, y))
+        center_range = range(12, 18)  # 6x6 kruising
 
-        # Add traffic lights
+        # Bepaal rijstroken per richting
+        incoming_lanes = [12, 13, 14]  # meest links → rechts (inkomend)
+        outgoing_lanes = [15, 16, 17]  # meest links → rechts (uitgaand)
+
+        # Noord (van boven naar kruising)
+        for x in incoming_lanes + outgoing_lanes:
+            for y in range(0, 12):  # 0 t/m 11
+                self.grid.place_agent(RoadCell((x, y), self), (x, y))
+
+        # Zuid (van onder naar kruising)
+        for x in incoming_lanes + outgoing_lanes:
+            for y in range(18, 30):  # 18 t/m 29
+                self.grid.place_agent(RoadCell((x, y), self), (x, y))
+
+        # West (van links naar kruising)
+        for y in incoming_lanes + outgoing_lanes:
+            for x in range(0, 12):
+                self.grid.place_agent(RoadCell((x, y), self), (x, y))
+
+        # Oost (van rechts naar kruising)
+        for y in incoming_lanes + outgoing_lanes:
+            for x in range(18, 30):
+                self.grid.place_agent(RoadCell((x, y), self), (x, y))
+
+        # Middenkruising (6x6)
+        for x in center_range:
+            for y in center_range:
+                self.grid.place_agent(RoadCell((x, y), self), (x, y))
+
+
+        # Verkeerslichten (kan later verfijnd worden per baanrichting)
         self.traffic_lights = []
         traffic_light_positions = [
             (8, 10), # Eastbound traffic light
