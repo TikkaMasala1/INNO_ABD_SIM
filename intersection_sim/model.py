@@ -5,7 +5,7 @@ from agents import VehicleAgent, RoadCell, TrafficLightAgent
 import random
 
 class TrafficModel(Model):
-    def __init__(self, width=30, height=30, traffic_light_cycle=30, car_spawn_rate=15):
+    def __init__(self, width=40, height=40, traffic_light_cycle=30, car_spawn_rate=15, num_lanes=1):
         super().__init__()
         self.grid = MultiGrid(width, height, torus=False)
         self.schedule = SimultaneousActivation(self)
@@ -13,65 +13,93 @@ class TrafficModel(Model):
         self.total_entered = 0
         self.total_exited = 0
         self.car_spawn_rate = car_spawn_rate
+        self.num_lanes = num_lanes
+        self.traffic_light_cycle = traffic_light_cycle  # Store cycle duration
+        self.current_cycle_time = 0  # Track time in the current phase
+        self.horizontal_phase = True  # True = E-W green, False = N-S green
 
-        center_range = range(12, 18)  # 6x6 kruising
+        # Calculate and store center range and lane data
+        intersection_size = 2 * self.num_lanes
+        self.center_start = (width - intersection_size) // 2
+        self.center_end = self.center_start + intersection_size
+        self.center_range = range(self.center_start, self.center_end)
+        self.incoming_lanes = list(range(self.center_start, self.center_start + self.num_lanes))
+        self.outgoing_lanes = list(range(self.center_end - self.num_lanes, self.center_end))
 
-        # Bepaal rijstroken per richting
-        incoming_lanes = [12, 13, 14]  # meest links → rechts (inkomend)
-        outgoing_lanes = [15, 16, 17]  # meest links → rechts (uitgaand)
+        road_lanes = self.incoming_lanes + self.outgoing_lanes
+        self.create_road_segment(road_lanes, range(0, self.center_start))  # North roads
+        self.create_road_segment(road_lanes, range(self.center_end, height))  # South roads
+        self.create_road_segment(range(0, self.center_start), road_lanes)  # West roads
+        self.create_road_segment(range(self.center_end, width), road_lanes)  # East roads
+        self.create_road_segment(self.center_range, self.center_range)  # Intersection
 
-        # Noord (van boven naar kruising)
-        for x in incoming_lanes + outgoing_lanes:
-            for y in range(0, 12):  # 0 t/m 11
-                self.grid.place_agent(RoadCell((x, y), self), (x, y))
+        # Update spawn positions
+        VehicleAgent.spawn_positions = []
+        for y in self.incoming_lanes:
+            VehicleAgent.spawn_positions.append((0, y))  # West incoming
+        for y in self.outgoing_lanes:
+            VehicleAgent.spawn_positions.append((width - 1, y))  # East incoming
+        for x in self.outgoing_lanes:
+            VehicleAgent.spawn_positions.append((x, 0))  # North incoming
+        for x in self.incoming_lanes:
+            VehicleAgent.spawn_positions.append((x, height - 1))  # South incoming
 
-        # Zuid (van onder naar kruising)
-        for x in incoming_lanes + outgoing_lanes:
-            for y in range(18, 30):  # 18 t/m 29
-                self.grid.place_agent(RoadCell((x, y), self), (x, y))
-
-        # West (van links naar kruising)
-        for y in incoming_lanes + outgoing_lanes:
-            for x in range(0, 12):
-                self.grid.place_agent(RoadCell((x, y), self), (x, y))
-
-        # Oost (van rechts naar kruising)
-        for y in incoming_lanes + outgoing_lanes:
-            for x in range(18, 30):
-                self.grid.place_agent(RoadCell((x, y), self), (x, y))
-
-        # Middenkruising (6x6)
-        for x in center_range:
-            for y in center_range:
-                self.grid.place_agent(RoadCell((x, y), self), (x, y))
-
-
-        # Verkeerslichten - 12 stuks (3 per kant, voor elke rijstrook)
+        # Traffic lights
         self.traffic_lights = []
-        traffic_light_positions = [
-            (15, 11), (16, 11), (17, 11),
-            (12, 18), (13, 18), (14, 18),
-            (11, 12), (11, 13), (11, 14),
-            (18, 17), (18, 16), (18, 15),
-        ]
+        traffic_light_positions = []
+        for x in self.incoming_lanes:
+            traffic_light_positions.append((x + self.num_lanes, self.center_start - 1))  # North
+        for x in self.outgoing_lanes:
+            traffic_light_positions.append((x - self.num_lanes, self.center_end))  # South
+        for y in self.incoming_lanes:
+            traffic_light_positions.append((self.center_start - 1, y))  # West
+        for y in self.outgoing_lanes:
+            traffic_light_positions.append((self.center_end, y))  # East
+
         for pos in traffic_light_positions:
-            light = TrafficLightAgent(pos, self, traffic_light_cycle)
+            light = TrafficLightAgent(pos, self)
             self.traffic_lights.append(light)
             self.grid.place_agent(light, pos)
             self.schedule.add(light)
 
     def step(self):
-        # Spawn new vehicles dynamically
-        if random.random() < (self.car_spawn_rate/100):  # 10% chance to spawn a vehicle each step
+        """Advance the model, including traffic light phase management."""
+        if random.random() < (self.car_spawn_rate / 100):
             self.spawn_vehicle()
-
+        
+        self.current_cycle_time += 1
+        if self.current_cycle_time >= self.traffic_light_cycle and self.is_intersection_clear():
+            self.horizontal_phase = not self.horizontal_phase  # Switch phase
+            self.current_cycle_time = 0
+        
         self.schedule.step()
 
+    def is_intersection_clear(self):
+        """Check if the intersection is clear of vehicles."""
+        for x in self.center_range:
+            for y in self.center_range:
+                cell_contents = self.grid.get_cell_list_contents((x, y))
+                if any(isinstance(agent, VehicleAgent) for agent in cell_contents):
+                    return False
+        return True
+
     def spawn_vehicle(self):
-        start_pos = random.choice(VehicleAgent.spawn_positions)
-        vehicle_id = self.next_id()  # Generate a unique ID for the new vehicle
-        vehicle = VehicleAgent(vehicle_id, self, start_pos)
-        self.schedule.add(vehicle)
-        self.grid.place_agent(vehicle, start_pos)
-        self.current_agents += 1  # Increment the current vehicles counter
-        self.total_entered += 1  # Increment the total entered counter
+        available_positions = list(VehicleAgent.spawn_positions)
+        random.shuffle(available_positions)
+        for start_pos in available_positions:
+            cell_contents = self.grid.get_cell_list_contents(start_pos)
+            vehicle_present = any(isinstance(agent, VehicleAgent) for agent in cell_contents)
+            if not vehicle_present:
+                vehicle_id = self.next_id()
+                vehicle = VehicleAgent(vehicle_id, self, start_pos, car_spawn_rate=self.car_spawn_rate)
+                self.schedule.add(vehicle)
+                self.grid.place_agent(vehicle, start_pos)
+                self.current_agents += 1
+                self.total_entered += 1
+                return
+
+    def create_road_segment(self, x_range, y_range):
+        """Helper function to create road cells."""
+        for x in x_range:
+            for y in y_range:
+                self.grid.place_agent(RoadCell((x, y), self), (x, y))
