@@ -33,14 +33,15 @@ def agent_portrayal(agent):
 
 grid = CanvasGrid(agent_portrayal,40, 40, 600, 600)
 
-traffic_light_cycle_slider = Slider(
-    "Traffic Light Cycle",
+auction_interval_slider = Slider(
+    "Auction Interval",
     30,
     10,
     60,
     1,
-    description="Adjust the traffic light cycle duration"
+    description="Interval between auctions (steps)"
 )
+
 spawn_rate_slider = Slider(
     "Car Spawn Rate",
     15,
@@ -61,13 +62,13 @@ num_lanes_slider = Slider(
 server = ModularServer(
     TrafficModel,
     [grid],
-    "Kruispunt Simulatie met Wachtrijen en Verkeerslichten",
+    "Auction-Based Traffic Simulation",
     {
         "width": 40,
         "height": 40,
-        "traffic_light_cycle": traffic_light_cycle_slider,
+        "auction_interval": auction_interval_slider,  # Updated parameter name
         "car_spawn_rate": spawn_rate_slider,
-        "num_lanes": num_lanes_slider  # Add the new slider
+        "num_lanes": num_lanes_slider
     }
 )
 
