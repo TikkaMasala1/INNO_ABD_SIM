@@ -1,4 +1,4 @@
-from mesa.visualization.modules import CanvasGrid
+from mesa.visualization.modules import CanvasGrid, ChartModule
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.UserParam import Slider
 from model import TrafficModel
@@ -33,6 +33,16 @@ def agent_portrayal(agent):
 
 grid = CanvasGrid(agent_portrayal,40, 40, 600, 600)
 
+traffic_flow_chart = ChartModule(
+    [{"Label": "TrafficFlowPerInterval", "Color": "Blue"}],
+    data_collector_name='datacollector'
+)
+
+waiting_time_chart = ChartModule(
+    [{"Label": "AverageWaitingTime", "Color": "Red"}],
+    data_collector_name='datacollector'
+)
+
 auction_interval_slider = Slider(
     "Auction Interval",
     30,
@@ -61,7 +71,7 @@ num_lanes_slider = Slider(
 
 server = ModularServer(
     TrafficModel,
-    [grid],
+    [grid,traffic_flow_chart, waiting_time_chart],
     "Auction-Based Traffic Simulation",
     {
         "width": 40,

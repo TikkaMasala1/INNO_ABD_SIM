@@ -1,6 +1,7 @@
 from mesa import Model
 from mesa.space import MultiGrid
 from mesa.time import SimultaneousActivation
+from mesa.datacollection import DataCollector
 from agents import VehicleAgent, RoadCell, TrafficLightAgent
 import random
 
@@ -46,7 +47,8 @@ class TrafficModel(Model):
         self.current_agents = 0
         self.total_entered = 0
         self.total_exited = 0
-
+        self.last_exited_count = 0
+        self.flow_interval = 10
         # Model configuration parameters
         self.car_spawn_rate = car_spawn_rate
         self.num_lanes = num_lanes
@@ -89,6 +91,13 @@ class TrafficModel(Model):
         self.traffic_lights = []
         self._initialize_traffic_lights(width, height)
 
+        self.datacollector = DataCollector(
+            model_reporters={
+                "TrafficFlowPerInterval": lambda m: m.get_flow_this_interval(),
+                "AverageWaitingTime": lambda m: m.get_average_waiting_time()
+            }
+        )
+
     def _initialize_traffic_lights(self, width, height):
         """Create and position traffic light agents at intersection approaches."""
         traffic_light_positions = []
@@ -117,6 +126,9 @@ class TrafficModel(Model):
 
         Handles vehicle spawning, phase timing, and transition management.
         """
+        # For data visualisation
+        self.datacollector.collect(self)
+
         # Random vehicle spawning
         if random.random() < (self.car_spawn_rate / 100):
             self.spawn_vehicle()
@@ -225,3 +237,18 @@ class TrafficModel(Model):
         for x in x_range:
             for y in y_range:
                 self.grid.place_agent(RoadCell((x, y), self), (x, y))
+
+    def get_flow_this_interval(self):
+        if self.schedule.steps % self.flow_interval == 0:
+            flow = self.total_exited - self.last_exited_count
+            self.last_exited_count = self.total_exited
+            return flow
+        else:
+            return 0
+        
+    def get_average_waiting_time(self):
+        agents = [a for a in self.schedule.agents if hasattr(a, "waiting_time")]
+        if agents:
+            total_wait = sum([a.waiting_time for a in agents])
+            return total_wait / len(agents)
+        return 0
