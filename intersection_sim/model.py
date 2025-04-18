@@ -28,7 +28,7 @@ class TrafficModel(Model):
         traffic_lights: List of TrafficLightAgent instances
     """
 
-    def __init__(self, width=40, height=40, auction_interval=30, car_spawn_rate=15, num_lanes=1):
+    def __init__(self, width=40, height=40, auction_interval=30, car_spawn_rate=15, num_lanes=1, car_speed=1, light_strategy="auction"):
         """Initialize traffic model with given parameters.
 
         Args:
@@ -39,6 +39,9 @@ class TrafficModel(Model):
             num_lanes: Number of lanes per direction
         """
         super().__init__()
+        self.car_speed = car_speed
+        self.light_strategy = light_strategy
+
         # Initialize core model components
         self.grid = MultiGrid(width, height, torus=False)
         self.schedule = SimultaneousActivation(self)
@@ -133,11 +136,18 @@ class TrafficModel(Model):
         if random.random() < (self.car_spawn_rate / 100):
             self.spawn_vehicle()
 
-        # Phase timing and auction management
+        # Phase timing and traffic light control
         self.current_cycle_time += 1
-        if self.current_cycle_time >= self.auction_interval:
-            self.conduct_auction()
-            self.current_cycle_time = 0
+
+        if self.light_strategy == "auction":
+            if self.current_cycle_time >= self.auction_interval:
+                self.conduct_auction()
+                self.current_cycle_time = 0
+
+        elif self.light_strategy == "fixed_cycle":
+            if self.current_cycle_time >= self.auction_interval:
+                self.horizontal_phase = not self.horizontal_phase  # gewoon flippen
+                self.current_cycle_time = 0
 
         # Execute all agent steps
         self.schedule.step()
@@ -220,7 +230,7 @@ class TrafficModel(Model):
             if not any(isinstance(agent, VehicleAgent)
                        for agent in self.grid.get_cell_list_contents(start_pos)):
                 vehicle_id = self.next_id()
-                vehicle = VehicleAgent(vehicle_id, self, start_pos, car_spawn_rate=self.car_spawn_rate)
+                vehicle = VehicleAgent(vehicle_id, self, start_pos, car_spawn_rate=self.car_spawn_rate, speed=self.car_speed)
                 self.schedule.add(vehicle)
                 self.grid.place_agent(vehicle, start_pos)
                 self.current_agents += 1

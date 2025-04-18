@@ -96,7 +96,7 @@ class VehicleAgent(Agent):
         (0, -1): "north"
     }
 
-    def __init__(self, unique_id, model, start_pos, car_spawn_rate=15):
+    def __init__(self, unique_id, model, start_pos, car_spawn_rate=15, speed=1):
         """Initialize a vehicle agent.
 
         Args:
@@ -110,7 +110,7 @@ class VehicleAgent(Agent):
         self.direction = self._determine_direction(start_pos)
 
         # Movement attributes
-        self.speed = 1
+        self.speed = speed
         self.sensing_range = 5
         self.steps_taken = 0
 
