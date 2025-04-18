@@ -1,6 +1,6 @@
 from mesa.visualization.modules import CanvasGrid, ChartModule
 from mesa.visualization.ModularVisualization import ModularServer
-from mesa.visualization.UserParam import Slider
+from mesa.visualization.UserParam import Slider, Choice
 from model import TrafficModel
 from agents import RoadCell, VehicleAgent, TrafficLightAgent
 
@@ -43,13 +43,20 @@ waiting_time_chart = ChartModule(
     data_collector_name='datacollector'
 )
 
-auction_interval_slider = Slider(
-    "Auction Interval",
+light_strategy_choice = Choice(
+    "Traffic Light Strategy",
+    value="auction",
+    choices=["auction", "fixed_cycle"],
+    description="Select the traffic light control strategy"
+)
+
+decision_interval_slider = Slider(
+    "Decision Interval",
     30,
     10,
     60,
     1,
-    description="Interval between auctions (steps)"
+    description="Interval between light strategies decisions"
 )
 
 spawn_rate_slider = Slider(
@@ -76,7 +83,8 @@ server = ModularServer(
     {
         "width": 40,
         "height": 40,
-        "auction_interval": auction_interval_slider,  # Updated parameter name
+        "light_strategy": light_strategy_choice,
+        "decision_interval": decision_interval_slider,
         "car_spawn_rate": spawn_rate_slider,
         "num_lanes": num_lanes_slider
     }

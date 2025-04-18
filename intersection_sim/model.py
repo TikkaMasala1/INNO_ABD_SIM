@@ -20,7 +20,7 @@ class TrafficModel(Model):
         total_exited: Total vehicles exited since start
         car_spawn_rate: Probability of spawning a new vehicle each step (percentage)
         num_lanes: Number of lanes per direction
-        auction_interval: Steps between traffic light auctions
+        decision_interval: Steps between traffic light auctions
         current_cycle_time: Steps since last auction
         horizontal_phase: Current traffic light phase (True=EW green, False=NS green)
         phase_transition: Current transition state (None or 'clearing')
@@ -28,13 +28,13 @@ class TrafficModel(Model):
         traffic_lights: List of TrafficLightAgent instances
     """
 
-    def __init__(self, width=40, height=40, auction_interval=30, car_spawn_rate=15, num_lanes=1, car_speed=1, light_strategy="auction"):
+    def __init__(self, width=40, height=40, decision_interval=30, car_spawn_rate=15, num_lanes=1, car_speed=1, light_strategy="auction"):
         """Initialize traffic model with given parameters.
 
         Args:
             width: Grid width in cells
             height: Grid height in cells
-            auction_interval: Steps between traffic light phase auctions
+            decision_interval: Steps between traffic light phase auctions
             car_spawn_rate: Vehicle spawn probability (0-100)
             num_lanes: Number of lanes per direction
         """
@@ -55,7 +55,7 @@ class TrafficModel(Model):
         # Model configuration parameters
         self.car_spawn_rate = car_spawn_rate
         self.num_lanes = num_lanes
-        self.auction_interval = auction_interval
+        self.decision_interval = decision_interval
         self.current_cycle_time = 0
 
         # Traffic light state management
@@ -140,13 +140,14 @@ class TrafficModel(Model):
         self.current_cycle_time += 1
 
         if self.light_strategy == "auction":
-            if self.current_cycle_time >= self.auction_interval:
+            if self.current_cycle_time >= self.decision_interval:
                 self.conduct_auction()
                 self.current_cycle_time = 0
 
         elif self.light_strategy == "fixed_cycle":
-            if self.current_cycle_time >= self.auction_interval:
-                self.horizontal_phase = not self.horizontal_phase  # gewoon flippen
+            if self.current_cycle_time >= self.decision_interval:
+                self.horizontal_phase = not self.horizontal_phase
+                print('Flipping, Fixed cycle')
                 self.current_cycle_time = 0
 
         # Execute all agent steps
@@ -187,26 +188,19 @@ class TrafficModel(Model):
                 total_horizontal += bid
             else:
                 total_vertical += bid
-            print(f"Total wait: {total_wait} Queue length: {queue_length} Avg wait: {avg_wait} Bid: {bid}")
 
         # Determine phase change
         new_phase = total_horizontal >= total_vertical
         phase_changed = new_phase != self.horizontal_phase
 
         if phase_changed:
-            print(
-                f"\nPhase change initiated. Current: {'Horizontal' if self.horizontal_phase else 'Vertical'}, New: {'Horizontal' if new_phase else 'Vertical'}")
             self.phase_transition = 'clearing'
             self.pending_phase = new_phase
         else:
             print("\nNo phase change needed.")
 
         # Log auction results
-        print(f"\nAuction Results (Step {self.schedule.steps}):")
-        print(f"Horizontal Bids: {total_horizontal:.2f}")
-        print(f"Vertical Bids: {total_vertical:.2f}")
-        print(f"New Phase: {'Horizontal' if new_phase else 'Vertical'}")
-        print(f"Phase Changed: {phase_changed}")
+        print(f"Phase changed, Auction")
 
     def is_intersection_clear(self):
         """Check if intersection area contains no vehicles.
