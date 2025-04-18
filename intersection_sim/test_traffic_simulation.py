@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import unittest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, PropertyMock
 import random
 from agents import RoadCell, TrafficLightAgent, VehicleAgent
 from model import TrafficModel
@@ -167,7 +167,7 @@ class TestTrafficSimulation(unittest.TestCase):
             [Mock(spec=VehicleAgent, waiting_time=10)],  # Horizontal lane
             []  # Vertical lane
         ])
-    
+        
         model.conduct_auction()
         self.assertEqual(model.phase_transition, 'clearing')
         self.assertTrue(model.pending_phase)
@@ -200,13 +200,13 @@ class TestTrafficSimulation(unittest.TestCase):
         """Test TrafficModel average waiting time calculation."""
         model = TrafficModel(width=40, height=40, num_lanes=1)
         vehicle = Mock(spec=VehicleAgent, waiting_time=10)
-        model.schedule.agents = [vehicle]
+        # Mock the schedule.agents property using PropertyMock
+        type(model.schedule).agents = PropertyMock(return_value=[vehicle])
         self.assertEqual(model.get_average_waiting_time(), 10)
-        
-        model.schedule.agents = []
+    
+        # Test with no agents
+        type(model.schedule).agents = PropertyMock(return_value=[])
         self.assertEqual(model.get_average_waiting_time(), 0)
-
-    # --- Tests for server.py ---
 
     def test_agent_portrayal(self):
         """Test agent_portrayal function for visualization."""
