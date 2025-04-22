@@ -19,8 +19,8 @@ scenarios = [
     {"traffic_condition": "Spitsuur", "car_speed": 5},
 ]
 
-iterations = 30
-max_steps = 500
+iterations = 100
+max_steps = 1000
 data_collection_period = 1
 
 
