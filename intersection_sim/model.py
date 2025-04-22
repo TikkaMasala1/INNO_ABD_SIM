@@ -4,13 +4,13 @@ from mesa.time import SimultaneousActivation
 from mesa.datacollection import DataCollector
 from agents import VehicleAgent, RoadCell, TrafficLightAgent
 import random
-
+import numpy as np
 
 class TrafficModel(Model):
     """A traffic simulation model with configurable intersections and smart traffic lights.
 
     The model simulates vehicle movement through an intersection with dynamic traffic light
-    control based on an auction system that responds to traffic conditions.
+    control based on an auction system, fixed cycle, or Dutch system.
 
     Attributes:
         grid: MultiGrid representing the simulation space
@@ -18,7 +18,8 @@ class TrafficModel(Model):
         current_agents: Count of currently active vehicles
         total_entered: Total vehicles entered since start
         total_exited: Total vehicles exited since start
-        car_spawn_rate: Probability of spawning a new vehicle each step (percentage)
+        car_spawn_rate: Mean number of vehicles to spawn per second (normal distribution)
+        car_spawn_std: Standard deviation for vehicle spawn rate
         num_lanes: Number of lanes per direction
         decision_interval: Steps between traffic light auctions
         current_cycle_time: Steps since last auction
@@ -26,21 +27,35 @@ class TrafficModel(Model):
         phase_transition: Current transition state (None or 'clearing')
         pending_phase: Phase to transition to after clearing
         traffic_lights: List of TrafficLightAgent instances
+        min_green_time: Minimum green time for Dutch system
+        max_green_time: Maximum green time for Dutch system
+        clearance_time: Clearance time for Dutch system
+        dutch_cycle_time: Tracks cycle time for Dutch system
     """
 
-    def __init__(self, width=40, height=40, decision_interval=30, car_spawn_rate=15, num_lanes=1, car_speed=1, light_strategy="auction"):
+    def __init__(self, width=40, height=40, decision_interval=30, traffic_condition="Normale tijd", num_lanes=1, car_speed=1, light_strategy="auction"):
         """Initialize traffic model with given parameters.
 
         Args:
             width: Grid width in cells
             height: Grid height in cells
             decision_interval: Steps between traffic light phase auctions
-            car_spawn_rate: Vehicle spawn probability (0-100)
+            traffic_condition: Traffic condition ("Normale tijd" or "Spitsuur")
             num_lanes: Number of lanes per direction
+            car_speed: Speed of vehicles (cells per step)
+            light_strategy: Traffic light control strategy ("auction", "fixed_cycle", "dutch_system")
         """
         super().__init__()
         self.car_speed = car_speed
         self.light_strategy = light_strategy
+
+        # Map traffic condition to car_spawn_rate
+        self.spawn_rate_mapping = {
+            "Normale tijd": 0.5,  # 30 vehicles/minute
+            "Spitsuur": 0.5 * 2.5  # 75 vehicles/minute (0.5 * 2.5 = 1.25 vehicles/second)
+        }
+        self.car_spawn_rate = self.spawn_rate_mapping[traffic_condition]
+        self.car_spawn_std = np.sqrt(self.car_spawn_rate)  # Default std = sqrt(mean)
 
         # Initialize core model components
         self.grid = MultiGrid(width, height, torus=False)
@@ -53,7 +68,6 @@ class TrafficModel(Model):
         self.last_exited_count = 0
         self.flow_interval = 10
         # Model configuration parameters
-        self.car_spawn_rate = car_spawn_rate
         self.num_lanes = num_lanes
         self.decision_interval = decision_interval
         self.current_cycle_time = 0
@@ -62,6 +76,13 @@ class TrafficModel(Model):
         self.horizontal_phase = True  # True = E-W green, False = N-S green
         self.phase_transition = None  # None or 'clearing'
         self.pending_phase = None
+
+        # Dutch system parameters
+        self.min_green_time = 7  # Minimum green time in steps (realistic for small intersections)
+        self.max_green_time = 60  # Maximum green time in steps
+        self.clearance_time = 3  # Clearance time in steps (2-5 seconds equivalent)
+        self.dutch_cycle_time = 0
+        self.sensor_range = 10  # 50 meters / 5 meters per grid space = 10 grid spaces
 
         # Calculate intersection geometry
         intersection_size = 2 * self.num_lanes
@@ -132,12 +153,14 @@ class TrafficModel(Model):
         # For data visualisation
         self.datacollector.collect(self)
 
-        # Random vehicle spawning
-        if random.random() < (self.car_spawn_rate / 100):
+        # Spawn vehicles based on normal distribution
+        num_vehicles = max(0, int(round(np.random.normal(self.car_spawn_rate, self.car_spawn_std))))
+        for _ in range(num_vehicles):
             self.spawn_vehicle()
 
         # Phase timing and traffic light control
         self.current_cycle_time += 1
+        self.dutch_cycle_time += 1
 
         if self.light_strategy == "auction":
             if self.current_cycle_time >= self.decision_interval:
@@ -149,6 +172,9 @@ class TrafficModel(Model):
                 self.horizontal_phase = not self.horizontal_phase
                 print('Flipping, Fixed cycle')
                 self.current_cycle_time = 0
+
+        elif self.light_strategy == "dutch_system":
+            self.conduct_dutch_system()
 
         # Execute all agent steps
         self.schedule.step()
@@ -201,6 +227,52 @@ class TrafficModel(Model):
 
         # Log auction results
         print(f"Phase changed, Auction")
+
+    def conduct_dutch_system(self):
+        """Implement Dutch traffic light system with dynamic green times and clearance time."""
+        if self.phase_transition == 'clearing':
+            # Wait for intersection to clear
+            return
+
+        # Calculate queue lengths for horizontal and vertical directions within 50 meters (10 grid spaces)
+        horizontal_queue = 0
+        vertical_queue = 0
+        for light in self.traffic_lights:
+            queue_length = 0
+            light_pos = light.pos
+            for cell in light.get_lane_cells():
+                cell_x, cell_y = cell
+                # Calculate distance from traffic light
+                if light.is_horizontal:
+                    distance = abs(cell_x - light_pos[0])
+                else:
+                    distance = abs(cell_y - light_pos[1])
+                # Only count vehicles within sensor range (10 grid spaces = 50 meters)
+                if distance <= self.sensor_range:
+                    for agent in self.grid.get_cell_list_contents(cell):
+                        if isinstance(agent, VehicleAgent):
+                            queue_length += 1
+            if light.is_horizontal:
+                horizontal_queue += queue_length
+            else:
+                vertical_queue += queue_length
+
+        # Determine green time based on queue length
+        total_queue = horizontal_queue + vertical_queue
+        if total_queue > 0:
+            horizontal_ratio = horizontal_queue / total_queue
+            green_time = self.min_green_time + (self.max_green_time - self.min_green_time) * horizontal_ratio
+            green_time = max(self.min_green_time, min(self.max_green_time, int(green_time)))
+        else:
+            green_time = self.min_green_time
+
+        # Check if it's time to switch phase
+        if self.dutch_cycle_time >= green_time + self.clearance_time:
+            new_phase = not self.horizontal_phase
+            self.phase_transition = 'clearing'
+            self.pending_phase = new_phase
+            self.dutch_cycle_time = 0
+            print(f"Switching to {'Horizontal' if new_phase else 'Vertical'} phase after {green_time} steps green and {self.clearance_time} steps clearance.")
 
     def is_intersection_clear(self):
         """Check if intersection area contains no vehicles.

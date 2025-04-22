@@ -31,7 +31,7 @@ def agent_portrayal(agent):
 
     return None
 
-grid = CanvasGrid(agent_portrayal,40, 40, 600, 600)
+grid = CanvasGrid(agent_portrayal, 40, 40, 600, 600)
 
 traffic_flow_chart = ChartModule(
     [{"Label": "TrafficFlowPerInterval", "Color": "Blue"}],
@@ -46,7 +46,7 @@ waiting_time_chart = ChartModule(
 light_strategy_choice = Choice(
     "Traffic Light Strategy",
     value="auction",
-    choices=["auction", "fixed_cycle"],
+    choices=["auction", "fixed_cycle", "dutch_system"],
     description="Select the traffic light control strategy"
 )
 
@@ -59,34 +59,34 @@ decision_interval_slider = Slider(
     description="Interval between light strategies decisions"
 )
 
-spawn_rate_slider = Slider(
-    "Car Spawn Rate",
-    15,
-    10,
-    80,
-    5,
-    description="Adjust the chance of spawning a car per step"
+spawn_rate_choice = Choice(
+    "Traffic Condition",
+    value="Normale tijd",
+    choices=["Normale tijd", "Spitsuur"],
+    description="Select traffic condition (Spitsuur has 2.5x higher spawn rate)"
 )
+
 num_lanes_slider = Slider(
     "Number of Lanes",
-    2,  # Default value
-    1,  # Min value
-    5,  # Max value
-    1,  # Step size
+    2,
+    1,
+    5,
+    1,
     description="Adjust the number of lanes per direction (incoming + outgoing)"
 )
 
 server = ModularServer(
     TrafficModel,
-    [grid,traffic_flow_chart, waiting_time_chart],
+    [grid, traffic_flow_chart, waiting_time_chart],
     "Auction-Based Traffic Simulation",
     {
         "width": 40,
         "height": 40,
         "light_strategy": light_strategy_choice,
         "decision_interval": decision_interval_slider,
-        "car_spawn_rate": spawn_rate_slider,
-        "num_lanes": num_lanes_slider
+        "traffic_condition": spawn_rate_choice,
+        "num_lanes": num_lanes_slider,
+        "car_speed": 1
     }
 )
 

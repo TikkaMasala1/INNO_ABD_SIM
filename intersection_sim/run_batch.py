@@ -6,17 +6,17 @@ params = {
     "width": 20,
     "height": 20,
     "num_lanes": 1,
-    "car_spawn_rate": [5, 10, 15, 20, 25, 30, 35, 40],
+    "traffic_condition": ["Normale tijd", "Spitsuur"],
     "car_speed": [1, 2, 3, 4, 5, 6, 7, 8],
-    "light_strategy": ["auction", "fixed_cycle"]
+    "light_strategy": ["auction", "fixed_cycle", "dutch_system"]
 }
 
 results = batch_run(
     model_cls=TrafficModel,
     parameters=params,
-    iterations=30,             # aantal runs per combinatie
-    max_steps=500,             # hoe lang de sim loopt
-    data_collection_period=1,  # hoe vaak je data verzamelt (bijv. elke stap)
+    iterations=30,
+    max_steps=500,
+    data_collection_period=1,
     display_progress=True
 )
 
