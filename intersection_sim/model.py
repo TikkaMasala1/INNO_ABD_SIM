@@ -170,7 +170,6 @@ class TrafficModel(Model):
         elif self.light_strategy == "fixed_cycle":
             if self.current_cycle_time >= self.decision_interval:
                 self.horizontal_phase = not self.horizontal_phase
-                print('Flipping, Fixed cycle')
                 self.current_cycle_time = 0
 
         elif self.light_strategy == "dutch_system":
@@ -181,7 +180,6 @@ class TrafficModel(Model):
 
         # Handle phase transitions if intersection clears
         if self.phase_transition == 'clearing' and self.is_intersection_clear():
-            print(f"Intersection clear. Switching to {'Horizontal' if self.pending_phase else 'Vertical'} phase.")
             self.horizontal_phase = self.pending_phase
             self.phase_transition = None
             self.pending_phase = None
@@ -222,11 +220,6 @@ class TrafficModel(Model):
         if phase_changed:
             self.phase_transition = 'clearing'
             self.pending_phase = new_phase
-        else:
-            print("\nNo phase change needed.")
-
-        # Log auction results
-        print(f"Phase changed, Auction")
 
     def conduct_dutch_system(self):
         """Implement Dutch traffic light system with dynamic green times and clearance time."""
@@ -272,7 +265,6 @@ class TrafficModel(Model):
             self.phase_transition = 'clearing'
             self.pending_phase = new_phase
             self.dutch_cycle_time = 0
-            print(f"Switching to {'Horizontal' if new_phase else 'Vertical'} phase after {green_time} steps green and {self.clearance_time} steps clearance.")
 
     def is_intersection_clear(self):
         """Check if intersection area contains no vehicles.
