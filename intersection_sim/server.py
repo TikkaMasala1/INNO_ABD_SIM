@@ -31,7 +31,7 @@ def agent_portrayal(agent):
 
     return None
 
-grid = CanvasGrid(agent_portrayal, 40, 40, 600, 600)
+grid = CanvasGrid(agent_portrayal, 80, 80, 600, 600)
 
 traffic_flow_chart = ChartModule(
     [{"Label": "TrafficFlowPerInterval", "Color": "Blue"}],
@@ -75,18 +75,27 @@ num_lanes_slider = Slider(
     description="Adjust the number of lanes per direction (incoming + outgoing)"
 )
 
+car_speed_slider = Slider(
+    "Vehicle Speed",
+    1,
+    1,
+    8,
+    1,
+    description="Adjust the speed of vehicles (grid spaces per step)"
+)
+
 server = ModularServer(
     TrafficModel,
     [grid, traffic_flow_chart, waiting_time_chart],
     "Auction-Based Traffic Simulation",
     {
-        "width": 40,
-        "height": 40,
+        "width": 80,
+        "height": 80,
         "light_strategy": light_strategy_choice,
         "decision_interval": decision_interval_slider,
         "traffic_condition": spawn_rate_choice,
         "num_lanes": num_lanes_slider,
-        "car_speed": 1
+        "car_speed": car_speed_slider
     }
 )
 

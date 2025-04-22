@@ -33,7 +33,7 @@ class TrafficModel(Model):
         dutch_cycle_time: Tracks cycle time for Dutch system
     """
 
-    def __init__(self, width=40, height=40, decision_interval=30, traffic_condition="Normale tijd", num_lanes=1, car_speed=1, light_strategy="auction"):
+    def __init__(self, width=80, height=80, decision_interval=30, traffic_condition="Normale tijd", num_lanes=1, car_speed=4, light_strategy="auction"):
         """Initialize traffic model with given parameters.
 
         Args:
