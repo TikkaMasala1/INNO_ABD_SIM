@@ -2,6 +2,7 @@ from mesa.batchrunner import batch_run
 from model import TrafficModel
 import pandas as pd
 import os
+
 # Fixed Parameters
 base_params = {
     "width": 20,
@@ -24,7 +25,7 @@ max_steps = 500
 data_collection_period = 1
 
 output_dir = "batch_run_results"
-os.makedirs(output_dir, exist_ok=True) # Create the directory if it doesn't exist
+os.makedirs(output_dir, exist_ok=True)  # Create the directory if it doesn't exist
 
 # Loop through each combination and run separately
 total_runs = len(light_strategies) * len(scenarios)
@@ -39,7 +40,7 @@ for strategy in light_strategies:
         print(f"Car Speed: {scenario['car_speed']}")
 
         params_for_run = {
-            **base_params, # Unpack base parameters
+            **base_params,  # Unpack base parameters
             "light_strategy": strategy,
             "traffic_condition": scenario["traffic_condition"],
             "car_speed": scenario["car_speed"]
@@ -60,7 +61,7 @@ for strategy in light_strategies:
         # Replace spaces in traffic condition with underscores for cleaner filenames
         tc_filename = scenario['traffic_condition'].replace(" ", "_")
         filename = f"{strategy}_{tc_filename}_speed_{scenario['car_speed']}.csv"
-        filepath = os.path.join(output_dir, filename) # Save inside the directory
+        filepath = os.path.join(output_dir, filename)  # Save inside the directory
 
         # Save DataFrame to CSV
         df.to_csv(filepath, index=False)
