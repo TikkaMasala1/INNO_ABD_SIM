@@ -169,3 +169,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+combined_batch_results_1_lane.csv
+combined_batch_results_2_lane.csv
+combined_batch_results_3_lane.csv
+combined_batch_results_5_lane.csv
